@@ -1,14 +1,88 @@
 import { useState } from 'react'
+import { useAuth } from './auth/AuthContext'
 import { generateAllTeams } from './engine/teamBuilder'
 import type { Team } from './engine/teamBuilder'
 
-function App() {
+function LoginPage() {
+  const { login, register } = useAuth()
+  const [isRegister, setIsRegister] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [username, setUsername] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleSubmit = async () => {
+    setError('')
+    setLoading(true)
+    try {
+      if (isRegister) {
+        await register(email, password, username)
+      } else {
+        await login(email, password)
+      }
+    } catch (e: any) {
+      setError(e.message)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0a0f1e', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif' }}>
+      <div style={{ background: '#111827', padding: '40px', borderRadius: '12px', width: '100%', maxWidth: '400px', border: '1px solid #1e3a5f' }}>
+        <h1 style={{ textAlign: 'center', color: 'white', marginBottom: '8px' }}>🏈 End Zone</h1>
+        <p style={{ textAlign: 'center', color: '#7eb3ff', marginBottom: '32px' }}>The ultimate American football manager</p>
+
+        <h2 style={{ color: 'white', marginBottom: '20px', fontSize: '18px' }}>{isRegister ? 'Create Account' : 'Sign In'}</h2>
+
+        {isRegister && (
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ color: '#7eb3ff', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Username</label>
+            <input value={username} onChange={e => setUsername(e.target.value)}
+              style={{ width: '100%', background: '#0a0f1e', border: '1px solid #1e3a5f', borderRadius: '8px', padding: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+              placeholder='Your manager name' />
+          </div>
+        )}
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ color: '#7eb3ff', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Email</label>
+          <input value={email} onChange={e => setEmail(e.target.value)}
+            style={{ width: '100%', background: '#0a0f1e', border: '1px solid #1e3a5f', borderRadius: '8px', padding: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+            placeholder='your@email.com' type='email' />
+        </div>
+
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ color: '#7eb3ff', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Password</label>
+          <input value={password} onChange={e => setPassword(e.target.value)}
+            style={{ width: '100%', background: '#0a0f1e', border: '1px solid #1e3a5f', borderRadius: '8px', padding: '10px', color: 'white', fontSize: '14px', boxSizing: 'border-box' }}
+            placeholder='••••••••' type='password' />
+        </div>
+
+        {error && <p style={{ color: '#ef4444', fontSize: '13px', marginBottom: '16px' }}>{error}</p>}
+
+        <button onClick={handleSubmit} disabled={loading}
+          style={{ width: '100%', background: '#1d4ed8', color: 'white', border: 'none', padding: '12px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer', marginBottom: '16px' }}>
+          {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
+        </button>
+
+        <p style={{ textAlign: 'center', color: '#7eb3ff', fontSize: '13px' }}>
+          {isRegister ? 'Already have an account?' : "Don't have an account?"}
+          <span onClick={() => setIsRegister(!isRegister)} style={{ color: '#60a5fa', cursor: 'pointer', marginLeft: '6px' }}>
+            {isRegister ? 'Sign In' : 'Register'}
+          </span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function GamePage() {
+  const { user, logout } = useAuth()
   const [teams, setTeams] = useState<Team[]>([])
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null)
 
   const handleGenerate = () => {
-    const allTeams = generateAllTeams()
-    setTeams(allTeams)
+    setTeams(generateAllTeams())
     setSelectedTeam(null)
   }
 
@@ -16,8 +90,15 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0f1e', color: 'white', fontFamily: 'sans-serif', padding: '20px' }}>
-      <h1 style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '8px' }}>🏈 End Zone</h1>
-      <p style={{ textAlign: 'center', color: '#7eb3ff', marginBottom: '24px' }}>Team Builder Test</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '1.8rem', margin: 0 }}>🏈 End Zone</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span style={{ color: '#7eb3ff', fontSize: '14px' }}>Welcome, {user?.username}</span>
+          <button onClick={logout} style={{ background: '#1e3a5f', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}>
+            Sign Out
+          </button>
+        </div>
+      </div>
 
       <div style={{ textAlign: 'center', marginBottom: '24px' }}>
         <button onClick={handleGenerate} style={{ background: '#1d4ed8', color: 'white', border: 'none', padding: '12px 32px', borderRadius: '8px', fontSize: '16px', cursor: 'pointer' }}>
@@ -27,7 +108,6 @@ function App() {
 
       {teams.length > 0 && !selectedTeam && (
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <p style={{ color: '#7eb3ff', marginBottom: '16px' }}>Click any team to view their roster</p>
           {['AFC', 'NFC'].map(conf => (
             <div key={conf} style={{ marginBottom: '32px' }}>
               <h2 style={{ color: '#7eb3ff', marginBottom: '12px' }}>{conf}</h2>
@@ -39,10 +119,9 @@ function App() {
                       <div key={team.id} onClick={() => setSelectedTeam(team)}
                         style={{ background: '#111827', border: '1px solid #1e3a5f', borderRadius: '8px', padding: '12px', cursor: 'pointer' }}>
                         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{team.city} {team.name}</div>
-                        <div style={{ fontSize: '12px', color: '#7eb3ff', marginBottom: '4px' }}>{team.abbreviation} · {team.stadiumName}</div>
+                        <div style={{ fontSize: '12px', color: '#7eb3ff', marginBottom: '4px' }}>{team.abbreviation}</div>
                         <div style={{ fontSize: '12px', color: '#a78bfa' }}>Cap: {formatSalary(team.currentSalary)} / {formatSalary(team.salaryCap)}</div>
                         <div style={{ fontSize: '12px', color: '#22c55e' }}>Space: {formatSalary(team.salaryCap - team.currentSalary)}</div>
-                        <div style={{ fontSize: '12px', color: '#7eb3ff', marginTop: '4px' }}>👥 {team.roster.length} players</div>
                       </div>
                     ))}
                   </div>
@@ -56,26 +135,9 @@ function App() {
       {selectedTeam && (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <button onClick={() => setSelectedTeam(null)} style={{ background: '#1e3a5f', color: 'white', border: 'none', padding: '8px 20px', borderRadius: '8px', cursor: 'pointer', marginBottom: '16px' }}>
-            ← Back to All Teams
+            ← Back
           </button>
-          <h2 style={{ marginBottom: '4px' }}>{selectedTeam.city} {selectedTeam.name}</h2>
-          <p style={{ color: '#7eb3ff', marginBottom: '16px', fontSize: '14px' }}>
-            {selectedTeam.conference} {selectedTeam.division} · {selectedTeam.stadiumName} ({selectedTeam.stadiumCapacity.toLocaleString()} capacity)
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '20px' }}>
-            <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
-              <div style={{ color: '#7eb3ff', fontSize: '12px' }}>Salary Cap</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{formatSalary(selectedTeam.salaryCap)}</div>
-            </div>
-            <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
-              <div style={{ color: '#7eb3ff', fontSize: '12px' }}>Current Salaries</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: selectedTeam.currentSalary > selectedTeam.salaryCap ? '#ef4444' : '#22c55e' }}>{formatSalary(selectedTeam.currentSalary)}</div>
-            </div>
-            <div style={{ background: '#111827', padding: '12px', borderRadius: '8px' }}>
-              <div style={{ color: '#7eb3ff', fontSize: '12px' }}>Cap Space</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#a78bfa' }}>{formatSalary(selectedTeam.salaryCap - selectedTeam.currentSalary)}</div>
-            </div>
-          </div>
+          <h2 style={{ marginBottom: '16px' }}>{selectedTeam.city} {selectedTeam.name}</h2>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: '#1e3a5f' }}>
@@ -83,7 +145,6 @@ function App() {
                 <th style={{ padding: '8px', textAlign: 'left' }}>Name</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>Pos</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>Age</th>
-                <th style={{ padding: '8px', textAlign: 'left' }}>Nat</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>OVR</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>POT</th>
                 <th style={{ padding: '8px', textAlign: 'left' }}>Salary</th>
@@ -96,7 +157,6 @@ function App() {
                   <td style={{ padding: '8px' }}>{p.firstName} {p.lastName}</td>
                   <td style={{ padding: '8px', color: '#7eb3ff' }}>{p.position}</td>
                   <td style={{ padding: '8px' }}>{p.age}</td>
-                  <td style={{ padding: '8px' }}>{p.nationality}</td>
                   <td style={{ padding: '8px', color: p.overall >= 80 ? '#22c55e' : p.overall >= 60 ? '#eab308' : '#ef4444' }}>{p.overall}</td>
                   <td style={{ padding: '8px', color: '#a78bfa' }}>{p.potential}</td>
                   <td style={{ padding: '8px', color: '#7eb3ff' }}>${p.salary.toLocaleString()}</td>
@@ -108,6 +168,18 @@ function App() {
       )}
     </div>
   )
+}
+
+function App() {
+  const { user, loading } = useAuth()
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: '#0a0f1e', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontFamily: 'sans-serif' }}>
+      <p>Loading End Zone...</p>
+    </div>
+  )
+
+  return user ? <GamePage /> : <LoginPage />
 }
 
 export default App
